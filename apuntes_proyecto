@@ -3,3 +3,18 @@ screen /dev/ttyACM1 9600
 
 What does chime mean?
 Chime is a feature that can be programmed to sound when a zone (door or window) is opened or closed.
+
+
+funcionalidad del programa:
+
+- Bienvenido al sistema de alarma 
+
+Ingrese la contraseña 
+
+[se ingresa la contraseña]
+
+- Seleccione una opción
+
+A. Modo chime 
+B. Modo alarma 
+C. Cambiar contraseña 
