@@ -15,16 +15,16 @@ Keypad customKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 int ledPin = 13;
 int pirPin = 10;
 int buzzer = 12;
-bool systemActive = false; // Estado inicial del sistema (desactivado)
-bool alarmTriggered = false; // Indica si la alarma fue activada por movimiento
-String password = ""; // Contraseña ingresada
-String correctPassword = "1234"; // Contraseña correcta
-unsigned long previousMillis = 0; // Almacenará la última vez que el LED fue actualizado
-const long interval = 500; // Intervalo en milisegundos para el parpadeo del LED
-const long buzzerInterval = 2000; // Duración del sonido para el modo Chime
+bool systemActive = false;
+bool alarmTriggered = false;
+String userPassword = ""; // Nueva variable para almacenar la contraseña del usuario
+String tempPassword = ""; // Almacena temporalmente la contraseña mientras se ingresa
+unsigned long previousMillis = 0;
+const long interval = 500;
 
 enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
 bool modeSelected = false;
+bool passwordSet = false; // Indica si la contraseña del usuario ha sido establecida
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -32,19 +32,56 @@ void setup() {
   pinMode(buzzer, OUTPUT);
   Serial.begin(9600);
   Serial.println("Bienvenido al sistema de seguridad.");
-  Serial.println("Seleccione el modo: A para Chime, B para Alarma.");
+  Serial.println("Por favor, ingrese una nueva clave de 4 dígitos/caracteres para el sistema:");
 }
 
 void loop() {
-  if (!modeSelected) {
+  if (!passwordSet) {
+    setPassword();
+  } else if (!modeSelected) {
     selectMode();
   } else if (!systemActive) {
     enterPassword();
   } else {
     handleSensorAndAlerts();
-    // Verificar la contraseña para desactivar si el sistema está activo
-    if (systemActive) {
-      checkPasswordToDeactivate();
+    // Llama a checkPasswordToDeactivate() independientemente del estado de alarmTriggered
+    checkPasswordToDeactivate();
+  }
+}
+
+void setPassword() {
+  char key = customKeypad.getKey();
+  if (key) {
+    Serial.print(key);
+    tempPassword += key;
+    
+    if (tempPassword.length() == 4) {
+      userPassword = tempPassword;
+      passwordSet = true;
+      tempPassword = ""; // Limpia la variable temporal para su próximo uso
+      Serial.println("\nClave establecida. Por favor, seleccione el modo: A para Chime, B para Alarma.");
+    }
+  }
+}
+
+// Modifica la función enterPassword para que compare contra userPassword en lugar de correctPassword
+void enterPassword() {
+  char key = customKeypad.getKey();
+  if (key) {
+    Serial.print(key); // Imprime cada dígito conforme se presiona
+    tempPassword += key;
+    
+    if (tempPassword.length() == 4) {
+      Serial.println(); // Salto de línea tras ingresar 4 dígitos
+      
+      if (tempPassword == userPassword) {
+        systemActive = true; // Activa el sistema
+        Serial.println("Sistema activado.");
+        tempPassword = ""; // Restablece la contraseña para una nueva entrada
+      } else {
+        Serial.println("Contraseña incorrecta. Intente de nuevo.");
+        tempPassword = ""; // Restablece la contraseña para seguir intentando
+      }
     }
   }
 }
@@ -57,27 +94,6 @@ void selectMode() {
     Serial.println(mode == CHIME ? "Chime" : "Alarma");
     modeSelected = true;
     Serial.println("Ingrese la contraseña para activar el sistema.");
-  }
-}
-
-void enterPassword() {
-  char key = customKeypad.getKey();
-  if (key) {
-    Serial.print(key); // Imprime cada dígito conforme se presiona
-    password += key;
-    
-    if (password.length() == 4) {
-      Serial.println(); // Salto de línea tras ingresar 4 dígitos
-      
-      if (password == correctPassword) {
-        systemActive = true; // Activa el sistema
-        Serial.println("Sistema activado.");
-        password = ""; // Restablece la contraseña para una nueva entrada
-      } else {
-        Serial.println("Contraseña incorrecta. Intente de nuevo.");
-        password = ""; // Restablece la contraseña para seguir intentando
-      }
-    }
   }
 }
 
@@ -119,27 +135,31 @@ void handleSensorAndAlerts() {
 bool checkPasswordToDeactivate() {
   char key = customKeypad.getKey();
   if (key) {
-    password += key;
-    if (password.length() == 4) {
-      if (password == correctPassword) {
+    Serial.print(key); // Imprime cada dígito conforme se presiona
+    tempPassword += key;
+    
+    if (tempPassword.length() == 4) {
+      if (tempPassword == userPassword) {
         deactivateSystem();
+        tempPassword = ""; // Limpia tempPassword para futuras entradas
         return true;
       } else {
-        Serial.println("Contraseña incorrecta. Intente de nuevo.");
-        password = ""; // Restablece para seguir intentando
+        Serial.println("\nContraseña incorrecta. Intente de nuevo.");
+        tempPassword = ""; // Limpia tempPassword para reintentar
       }
     }
   }
   return false;
 }
 
+
 void deactivateSystem() {
-  systemActive = false;
-  modeSelected = false;
-  alarmTriggered = false;
-  digitalWrite(buzzer, LOW); // Apaga el buzzer
-  digitalWrite(ledPin, LOW); // Apaga el LED
-  Serial.println("Modo desactivado. Volviendo al menú principal.");
-  Serial.println("Seleccione el modo: A para Chime, B para Alarma.");
-  password = ""; // Restablece la contraseña
+    systemActive = false;
+    modeSelected = false;
+    alarmTriggered = false;
+    digitalWrite(buzzer, LOW); // Apaga el buzzer
+    digitalWrite(ledPin, LOW); // Apaga el LED
+    Serial.println("\nModo desactivado. Volviendo al menú principal.");
+    Serial.println("Seleccione el modo: A para Chime, B para Alarma.");
+    // No es necesario resetear tempPassword aquí ya que se limpia en checkPasswordToDeactivate
 }
