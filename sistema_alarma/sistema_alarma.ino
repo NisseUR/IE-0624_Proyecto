@@ -17,10 +17,12 @@ int pirPin = 10;
 int buzzer = 12;
 bool systemActive = false; // Estado inicial del sistema (desactivado)
 bool alarmTriggered = false; // Indica si la alarma fue activada por movimiento
-int pirState = LOW; // Añadido: Estado inicial del sensor PIR
 
 String password = ""; // Contraseña ingresada
 String correctPassword = "1234"; // Contraseña correcta
+
+unsigned long previousMillis = 0; // Almacenará la última vez que el LED fue actualizado
+const long interval = 500; // Intervalo en milisegundos para el parpadeo del LED
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -52,21 +54,29 @@ void loop() {
     }
   }
 
-  // Detección de movimiento independiente del estado de la alarma
-  pirState = digitalRead(pirPin);
-  if (pirState == HIGH) {
-    digitalWrite(ledPin, HIGH); // Enciende el LED si detecta movimiento
+  // Control de parpadeo del LED solo cuando la alarma está activada y sonando
+  if (alarmTriggered) {
+    unsigned long currentMillis = millis();
     
-    if (systemActive && !alarmTriggered) {
+    if (currentMillis - previousMillis >= interval) {
+      // Si ha pasado el intervalo, cambia el estado del LED
+      previousMillis = currentMillis;
+      
+      // Si el LED está encendido, apágalo y viceversa
+      digitalWrite(ledPin, !digitalRead(ledPin));
+    }
+    
+    digitalWrite(buzzer, HIGH); // Buzzer suena continuamente
+  } else {
+    // Detección de movimiento independiente del estado de la alarma
+    int pirState = digitalRead(pirPin);
+    if (systemActive && pirState == HIGH && !alarmTriggered) {
       alarmTriggered = true; // Activa la alarma
       Serial.println("¡Alarma! Movimiento detectado.");
+    } else if (!systemActive && pirState == HIGH) {
+      digitalWrite(ledPin, HIGH); // Enciende el LED si detecta movimiento (sistema desarmado)
+      delay(200); // Pequeño retardo para visibilidad
+      digitalWrite(ledPin, LOW);
     }
-  } else {
-    digitalWrite(ledPin, LOW); // Apaga el LED si no hay movimiento
-  }
-
-  // Mantiene la alarma sonando si fue activada
-  if (alarmTriggered) {
-    digitalWrite(buzzer, HIGH); // Buzzer suena continuamente
   }
 }
