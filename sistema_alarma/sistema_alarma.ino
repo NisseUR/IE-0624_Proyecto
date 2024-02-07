@@ -8,18 +8,19 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {9, 8, 7, 6}; 
-byte colPins[COLS] = {5, 4, 3, 2}; 
+byte rowPins[ROWS] = {9, 8, 7, 6}; // Pines de las filas del teclado a Arduino
+byte colPins[COLS] = {5, 4, 3, 2}; // Pines de las columnas del teclado a Arduino
 Keypad customKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 int ledPin = 13;
-int pirPin = 7;
+int pirPin = 10;
 int buzzer = 12;
-bool systemArmed = false;
-bool alarmTriggered = false;
+bool systemActive = false; // Estado inicial del sistema (desactivado)
+bool alarmTriggered = false; // Indica si la alarma fue activada por movimiento
+int pirState = LOW; // Añadido: Estado inicial del sensor PIR
 
-String inputPassword = "";
-String correctPassword = "1234";
+String password = ""; // Contraseña ingresada
+String correctPassword = "1234"; // Contraseña correcta
 
 void setup() {
   pinMode(ledPin, OUTPUT);
@@ -31,48 +32,41 @@ void setup() {
 
 void loop() {
   char key = customKeypad.getKey();
-  
-  if (key != NO_KEY) {
-    Serial.print(key); // Muestra cada tecla presionada
-    inputPassword += key;
+  if (key) {
+    Serial.print(key); // Imprime cada dígito conforme se presiona
+    password += key;
+    
+    if (password.length() == 4) {
+      Serial.println(); // Salto de línea tras ingresar 4 dígitos
+      
+      if (password == correctPassword) {
+        systemActive = !systemActive; // Cambia el estado de activación del sistema
+        alarmTriggered = false; // Restablece el estado de la alarma
+        digitalWrite(buzzer, LOW); // Apaga el buzzer
+        Serial.println(systemActive ? "Sistema activado." : "Sistema desactivado. Alarma detenida.");
+        password = ""; // Restablece la contraseña para una nueva entrada
+      } else {
+        Serial.println("Contraseña incorrecta. Intente de nuevo.");
+        password = ""; // Restablece la contraseña para seguir intentando
+      }
+    }
+  }
 
-    if (inputPassword.length() == 4) {
-      if (inputPassword == correctPassword) {
-        if (systemArmed) {
-          systemArmed = false;
-          alarmTriggered = false;
-          digitalWrite(buzzer, LOW); // Asegura apagar el buzzer
-          Serial.println("\nSistema desarmado.");
-        } else {
-          systemArmed = true;
-          Serial.println("\nSistema armado. Esperando movimiento...");
-        }
-        inputPassword = ""; // Resetea la contraseña ingresada
-      } else {
-        Serial.println("\nContraseña incorrecta. Intente de nuevo.");
-        inputPassword = ""; // Resetea si la contraseña es incorrecta
-      }
+  // Detección de movimiento independiente del estado de la alarma
+  pirState = digitalRead(pirPin);
+  if (pirState == HIGH) {
+    digitalWrite(ledPin, HIGH); // Enciende el LED si detecta movimiento
+    
+    if (systemActive && !alarmTriggered) {
+      alarmTriggered = true; // Activa la alarma
+      Serial.println("¡Alarma! Movimiento detectado.");
     }
+  } else {
+    digitalWrite(ledPin, LOW); // Apaga el LED si no hay movimiento
   }
-  
-  // Solo verifica el sensor PIR si la alarma no ha sido activada
-  if (!alarmTriggered) {
-    if (digitalRead(pirPin) == HIGH) {
-      if (systemArmed) {
-        alarmTriggered = true;
-        Serial.println("¡Alarma! Movimiento detectado.");
-      } else {
-        digitalWrite(ledPin, HIGH); // Enciende el LED si detecta movimiento (sistema desarmado)
-        delay(200); // Pequeño retardo para visibilidad
-        digitalWrite(ledPin, LOW);
-      }
-    }
-  }
-  
-  // Manejo de la alarma activada
+
+  // Mantiene la alarma sonando si fue activada
   if (alarmTriggered) {
-    digitalWrite(ledPin, !digitalRead(ledPin)); // Parpadeo del LED
     digitalWrite(buzzer, HIGH); // Buzzer suena continuamente
-    delay(100); // Controla la velocidad de parpadeo
   }
 }
