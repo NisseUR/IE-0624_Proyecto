@@ -7,14 +7,43 @@ Chime is a feature that can be programmed to sound when a zone (door or window) 
 
 funcionalidad del programa:
 
-- Bienvenido al sistema de alarma 
-
-Ingrese la contraseña 
-
-[se ingresa la contraseña]
+- Bienvenido/a al sistema de alarma 
 
 - Seleccione una opción
 
 A. Modo chime 
 B. Modo alarma 
 C. Cambiar contraseña 
+D. Manual de uso
+
+
+[Selecciona opcion A] -> Ingrese contraseña 
+-> contraseña correcta -> Modo Alarma activado 
+
+-> contraseña incorrecta, vuelver a intentar
+
+[Ingresar contraseña para salir del Modo]
+[en caso de ser activada, se ingresa la contraseña para desactivarla y se devuelve al menu]
+
+'''''''''''''''''''''''''''''''''''''''''''''
+
+[Selecciona opcion B]
+-> contraseña correcta -> Modo Chime activado 
+
+-> contraseña incorrecta, vuelver a intentar
+
+[Ingresar contraseña para salir del Modo]
+
+'''''''''''''''''''''''''''''''''''''''''''''
+
+[Selecciona opcion C]
+
+Ingrese contraseña actual
+-> Ingrese contraseña nueva 
+
+'''''''''''''''''''''''''''''''''''''''''''''
+
+[Selecciona opcion D]
+Este es el manual de uso para la alarma
+
+
