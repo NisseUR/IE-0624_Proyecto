@@ -57,11 +57,14 @@ void setPassword() {
     if (key) {
       newPassword += key;
       Serial.print("*"); // Muestra asteriscos en lugar de los dígitos reales
+      delay(100); // Pequeña pausa para evitar entradas duplicadas
     }
   }
   userPassword = newPassword;
   passwordSet = true;
   Serial.println("\nNueva contraseña establecida.");
+
+  Serial.println("\nSeleccione el modo: \nA. Modo Chime \nB. Modo Alarma \nC. Cambiar contraseña ");
 }
 
 // Modifica la función enterPassword para que compare contra userPassword en lugar de correctPassword
@@ -202,5 +205,5 @@ void deactivateSystem() {
     digitalWrite(buzzer, LOW); // Apaga el buzzer
     digitalWrite(ledPin, LOW); // Apaga el LED
     Serial.println("\nModo desactivado. Volviendo al menú principal.");
-    Serial.println("Seleccione el modo: A para Chime, B para Alarma.");
+    Serial.println("\nSeleccione el modo: \nA. Modo Chime \nB. Modo Alarma \nC. Cambiar contraseña ");
 }
