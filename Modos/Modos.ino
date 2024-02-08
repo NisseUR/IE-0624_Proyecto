@@ -130,13 +130,17 @@ bool enterPasswordForChange() {
 }
 
 void changePassword() {
-  Serial.println("Cambiando contraseña. Ingrese contraseña actual:");
-  if (enterPasswordForChange()) {
-    Serial.println("Ingrese nueva contraseña:");
-    setPassword();
-  } else {
-    Serial.println("Contraseña actual incorrecta.");
-  }
+    Serial.println("Cambiando contraseña. Ingrese contraseña actual:");
+    while (true) { // Bucle infinito para intentos ilimitados
+        if (enterPasswordForChange()) {
+            Serial.println("Ingrese nueva contraseña:");
+            setPassword(); // Establece la nueva contraseña
+            break; // Sale del bucle si la contraseña se cambia correctamente
+        } else {
+            Serial.println("Contraseña incorrecta. Intente de nuevo:");
+            // No es necesario limpiar tempPassword aquí ya que enterPasswordForChange() se encarga
+        }
+    }
 }
 
 void handleSensorAndAlerts() {
