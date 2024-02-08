@@ -50,18 +50,18 @@ void loop() {
 }
 
 void setPassword() {
-  char key = customKeypad.getKey();
-  if (key) {
-    Serial.print(key);
-    tempPassword += key;
-    
-    if (tempPassword.length() == 4) {
-      userPassword = tempPassword;
-      passwordSet = true;
-      tempPassword = ""; // Limpia la variable temporal para su próximo uso
-      Serial.println("\nClave establecida. Por favor, seleccione el modo: A para Chime, B para Alarma.");
+  String newPassword = "";
+  Serial.println("Ingrese nueva contraseña de 4 dígitos/caracteres:");
+  while(newPassword.length() < 4) {
+    char key = customKeypad.getKey();
+    if (key) {
+      newPassword += key;
+      Serial.print("*"); // Muestra asteriscos en lugar de los dígitos reales
     }
   }
+  userPassword = newPassword;
+  passwordSet = true;
+  Serial.println("\nNueva contraseña establecida.");
 }
 
 // Modifica la función enterPassword para que compare contra userPassword en lugar de correctPassword
@@ -86,14 +86,53 @@ void enterPassword() {
   }
 }
 
+
 void selectMode() {
   char key = customKeypad.getKey();
-  if (key == 'A' || key == 'B') {
-    mode = (key == 'A') ? CHIME : ALARM;
-    Serial.print("Modo seleccionado: ");
-    Serial.println(mode == CHIME ? "Chime" : "Alarma");
-    modeSelected = true;
-    Serial.println("Ingrese la contraseña para activar el sistema.");
+  if (key) {
+    switch(key) {
+      case 'A':
+      case 'B':
+        mode = (key == 'A') ? CHIME : ALARM;
+        Serial.println("\nModo seleccionado: " + String(mode == CHIME ? "Chime" : "Alarma"));
+        modeSelected = true;
+        Serial.println("Ingrese la contraseña para activar el sistema.");
+        break;
+      case 'C':
+        changePassword();
+        break;
+    }
+  }
+}
+
+bool enterPasswordForChange() {
+  String enteredPassword = "";
+  Serial.println("Ingrese contraseña actual:");
+  while(enteredPassword.length() < 4) {
+    char key = customKeypad.getKey();
+    if (key) {
+      enteredPassword += key;
+      Serial.print("*"); // Para mantener la privacidad de la contraseña
+      delay(100); // Pequeña pausa para evitar doble lectura
+    }
+  }
+  Serial.println(); // Salto de línea
+  
+  if (enteredPassword == userPassword) {
+    return true;
+  } else {
+    Serial.println("Contraseña incorrecta.");
+    return false;
+  }
+}
+
+void changePassword() {
+  Serial.println("Cambiando contraseña. Ingrese contraseña actual:");
+  if (enterPasswordForChange()) {
+    Serial.println("Ingrese nueva contraseña:");
+    setPassword();
+  } else {
+    Serial.println("Contraseña actual incorrecta.");
   }
 }
 
@@ -150,7 +189,6 @@ bool checkPasswordToDeactivate() {
     } else {
       Serial.println("\nContraseña incorrecta. Intente de nuevo.");
       tempPassword = ""; // Limpia tempPassword para reintentar
-      // Aquí puede ser necesario llamar a un método para reintentar o mostrar opciones nuevamente
     }
   }
   return false;
@@ -165,5 +203,4 @@ void deactivateSystem() {
     digitalWrite(ledPin, LOW); // Apaga el LED
     Serial.println("\nModo desactivado. Volviendo al menú principal.");
     Serial.println("Seleccione el modo: A para Chime, B para Alarma.");
-    // No es necesario resetear tempPassword aquí ya que se limpia en checkPasswordToDeactivate
 }
