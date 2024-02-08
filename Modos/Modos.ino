@@ -68,18 +68,18 @@ void setPassword() {
 void enterPassword() {
   char key = customKeypad.getKey();
   if (key) {
-    Serial.print(key); // Imprime cada dígito conforme se presiona
     tempPassword += key;
-    
+    Serial.print("*"); // Muestra un asterisco por cada tecla presionada
+
     if (tempPassword.length() == 4) {
       Serial.println(); // Salto de línea tras ingresar 4 dígitos
       
       if (tempPassword == userPassword) {
         systemActive = true; // Activa el sistema
-        Serial.println("Sistema activado.");
+        Serial.println("\nSistema activado.");
         tempPassword = ""; // Restablece la contraseña para una nueva entrada
       } else {
-        Serial.println("Contraseña incorrecta. Intente de nuevo.");
+        Serial.println("\nContraseña incorrecta. Intente de nuevo.");
         tempPassword = ""; // Restablece la contraseña para seguir intentando
       }
     }
@@ -133,20 +133,24 @@ void handleSensorAndAlerts() {
 }
 
 bool checkPasswordToDeactivate() {
-  char key = customKeypad.getKey();
-  if (key) {
-    Serial.print(key); // Imprime cada dígito conforme se presiona
-    tempPassword += key;
-    
-    if (tempPassword.length() == 4) {
-      if (tempPassword == userPassword) {
-        deactivateSystem();
-        tempPassword = ""; // Limpia tempPassword para futuras entradas
-        return true;
-      } else {
-        Serial.println("\nContraseña incorrecta. Intente de nuevo.");
-        tempPassword = ""; // Limpia tempPassword para reintentar
-      }
+  char key;
+  if (tempPassword.length() < 4) {
+    key = customKeypad.getKey();
+    if (key) {
+      tempPassword += key;
+      Serial.print("*"); // Muestra un asterisco por cada tecla presionada
+    }
+  }
+
+  if (tempPassword.length() == 4) {
+    if (tempPassword == userPassword) {
+      deactivateSystem();
+      tempPassword = ""; // Limpia tempPassword para futuras entradas
+      return true;
+    } else {
+      Serial.println("\nContraseña incorrecta. Intente de nuevo.");
+      tempPassword = ""; // Limpia tempPassword para reintentar
+      // Aquí puede ser necesario llamar a un método para reintentar o mostrar opciones nuevamente
     }
   }
   return false;
