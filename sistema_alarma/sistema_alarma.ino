@@ -28,7 +28,8 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(pirPin, INPUT);
   pinMode(buzzer, OUTPUT);
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Sistema desactivado. Ingrese la contraseña para activar.");
 }
 
