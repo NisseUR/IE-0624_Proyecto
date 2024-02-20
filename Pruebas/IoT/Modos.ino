@@ -1,55 +1,42 @@
-
-/* Fill-in information from Blynk Device Info here */
-#define BLYNK_TEMPLATE_ID           "TMPL2Zq6nuALv"
-#define BLYNK_TEMPLATE_NAME         "Quickstart Template"
-#define BLYNK_AUTH_TOKEN            "U_ALVfVlWF2MeTODb25IRA05N19MKWcI"
-
-#include <ESP8266WiFi.h>
-#include <BlynkSimpleEsp8266.h>
 #include <Keypad.h>
-// Configuración del teclado
-const byte ROWS = 4;
-const byte COLS = 4;
+
+const byte ROWS = 4; // Cuatro filas
+const byte COLS = 4; // Cuatro columnas
 char keys[ROWS][COLS] = {
   {'1','2','3','A'},
   {'4','5','6','B'},
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {9, 8, 7, 6};
-byte colPins[COLS] = {5, 4, 3, 2};
+byte rowPins[ROWS] = {39, 8, 7, 6}; // Pines de las filas del teclado a Arduino
+byte colPins[COLS] = {5, 4, 3, 32}; // Pines de las columnas del teclado a Arduino
 Keypad customKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-// Configuración de los pines
 int ledPin = 13;
 int pirPin = 10;
-int buzzer = 12;
+int buzzer = 11;
 bool systemActive = false;
 bool alarmTriggered = false;
-String userPassword = ""; // Inicialmente vacía, se establecerá a través de Blynk o serial
-String tempPassword = "";
-enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
-bool modeSelected = false;
-bool passwordSet = false;
+String userPassword = ""; // Nueva variable para almacenar la contraseña del usuario
+String tempPassword = ""; // Almacena temporalmente la contraseña mientras se ingresa
 unsigned long previousMillis = 0;
+unsigned long lastTriggerMillis = 0;
 const long interval = 500;
 
-// Your WiFi credentials.
-// Set password to "" for open networks.
-char ssid[] = "APARTAMENTOS#1#2#3#4#5";
-char pass[] = "alfa12345";
+enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
+bool modeSelected = false;
+bool passwordSet = false; // Indica si la contraseña del usuario ha sido establecida
 
 void setup() {
-  Serial.begin(9600);
-  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
   pinMode(ledPin, OUTPUT);
   pinMode(pirPin, INPUT);
   pinMode(buzzer, OUTPUT);
-  Serial.println("Bienvenido al sistema de seguridad. Por favor, configure su sistema a través de la aplicación Blynk.");
+  Serial.begin(9600);
+  Serial.println("Bienvenido al sistema de seguridad.");
+  Serial.println("Por favor, ingrese una nueva clave de 4 dígitos/caracteres para el sistema:");
 }
 
 void loop() {
-  Blynk.run();
   if (!passwordSet) {
     setPassword();
   } else if (!modeSelected) {
@@ -157,38 +144,37 @@ void changePassword() {
     }
 }
 
+//cambiada
 void handleSensorAndAlerts() {
   int pirState = digitalRead(pirPin);
-  static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
-  
-  if (pirState == HIGH) {
-    Serial.println("Movimiento detectado en la zona.");
-    if (mode == CHIME && !alarmTriggered) {
-      // En Modo Chime, activa el buzzer por 2 segundos al detectar movimiento
+  unsigned long currentMillis = millis();
+
+  // Detección de movimiento y lógica para el modo Chime
+  if (pirState == HIGH && systemActive) {
+    if (!alarmTriggered) { 
       alarmTriggered = true;
-      digitalWrite(buzzer, HIGH);
-      lastTriggerMillis = millis();
-    } else if (mode == ALARM && !alarmTriggered) {
-      // En Modo Alarma, inicia la alarma
-      alarmTriggered = true;
-      lastTriggerMillis = millis();
+      lastTriggerMillis = currentMillis; // Registra el momento de la detección
+
+      if (mode == CHIME) {
+        digitalWrite(buzzer, HIGH); 
+      }
     }
-  }
-  
-  // Para el Modo Chime, apaga el buzzer después de 2 segundos
-  if (mode == CHIME && alarmTriggered && millis() - lastTriggerMillis >= 2000) {
-    digitalWrite(buzzer, LOW);
+  } 
+  if (mode == CHIME && alarmTriggered && (currentMillis - lastTriggerMillis >= 2000)) {
+    digitalWrite(buzzer, LOW); // Apaga el buzzer
     alarmTriggered = false; // Restablece para permitir nuevas detecciones
   }
 
-  // Para el Modo Alarma, maneja el parpadeo del LED y el buzzer continuo
   if (mode == ALARM && alarmTriggered) {
-    unsigned long currentMillis = millis();
+    // Si la alarma está activada, se podría agregar lógica específica aquí
+    // Por ejemplo, mantener el buzzer activo o manejar el LED
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
       digitalWrite(ledPin, !digitalRead(ledPin)); // Parpadeo del LED
     }
-    digitalWrite(buzzer, HIGH); // Mantiene el buzzer sonando
+  }
+  if (!systemActive || !alarmTriggered) {
+    digitalWrite(buzzer, LOW);
   }
 }
 
@@ -224,35 +210,4 @@ void deactivateSystem() {
     digitalWrite(ledPin, LOW); // Apaga el LED
     Serial.println("\nModo desactivado. Volviendo al menú principal.");
     Serial.println("\nSeleccione el modo: \nA. Modo Chime \nB. Modo Alarma \nC. Cambiar contraseña ");
-}
-
-BLYNK_WRITE(V0) { // Función para cambiar/establecer la contraseña desde Blynk
-  userPassword = param.asStr();
-  passwordSet = true;
-  Serial.println("Contraseña establecida/cambiada con éxito.");
-}
-
-BLYNK_WRITE(V1) { // Función para activar/desactivar el sistema desde Blynk
-  systemActive = param.asInt();
-  if (systemActive) {
-    Serial.println("Sistema activado desde Blynk.");
-  } else {
-    Serial.println("Sistema desactivado desde Blynk.");
-    deactivateSystem();
-  }
-}
-
-BLYNK_WRITE(V2) { // Función para seleccionar el modo desde Blynk
-  int selectedMode = param.asInt();
-  switch(selectedMode) {
-    case 1:
-      mode = CHIME;
-      Serial.println("Modo Chime activado.");
-      break;
-    case 2:
-      mode = ALARM;
-      Serial.println("Modo Alarma activado.");
-      break;
-  }
-  modeSelected = true;
 }
