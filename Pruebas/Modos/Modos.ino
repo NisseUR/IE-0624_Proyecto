@@ -8,13 +8,13 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {9, 8, 7, 6}; // Pines de las filas del teclado a Arduino
-byte colPins[COLS] = {5, 4, 3, 2}; // Pines de las columnas del teclado a Arduino
+byte rowPins[ROWS] = {39, 8, 7, 6}; // Pines de las filas del teclado a Arduino
+byte colPins[COLS] = {5, 4, 3, 32}; // Pines de las columnas del teclado a Arduino
 Keypad customKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 int ledPin = 13;
 int pirPin = 10;
-int buzzer = 12;
+int buzzer = 11;
 bool systemActive = false;
 bool alarmTriggered = false;
 String userPassword = ""; // Nueva variable para almacenar la contraseña del usuario
