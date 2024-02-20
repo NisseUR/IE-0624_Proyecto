@@ -1,9 +1,10 @@
+/* Fill-in information from Blynk Device Info here */
+#define BLYNK_TEMPLATE_ID           "TMPL2Zq6nuALv"
+#define BLYNK_TEMPLATE_NAME         "Quickstart Template"
+#define BLYNK_AUTH_TOKEN            "U_ALVfVlWF2MeTODb25IRA05N19MKWcI"
+
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
-#define BLYNK_TEMPLATE_ID ""
-#define BLYNK_TEMPLATE_NAME ""
-#define BLYNK_PRINT Serial
-
 // Configuración del teclado
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -29,10 +30,10 @@ enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
 bool modeSelected = false;
 bool passwordSet = false;
 
-// Datos de WiFi y Blynk
-char ssid[] = "";
-char pass[] = "";
-char auth[] = "";
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = "APARTAMENTOS#1#2#3#4#5";
+char pass[] = "alfa12345";
 
 void setup() {
   Serial.begin(9600);
