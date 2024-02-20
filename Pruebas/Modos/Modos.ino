@@ -147,34 +147,39 @@ void changePassword() {
 //cambiada
 void handleSensorAndAlerts() {
   int pirState = digitalRead(pirPin);
-  unsigned long currentMillis = millis();
-
-  // Detección de movimiento y lógica para el modo Chime
-  if (pirState == HIGH && systemActive) {
-    if (!alarmTriggered) { 
-      alarmTriggered = true;
-      lastTriggerMillis = currentMillis; // Registra el momento de la detección
-
-      if (mode == CHIME) {
-        digitalWrite(buzzer, HIGH); 
+  static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
+  
+  // Detecta movimiento
+  if (pirState == HIGH) {
+    Serial.println("Movimiento detectado en la zona.");
+    if (mode == CHIME) {
+      // En Modo Chime, activa el buzzer solo si previamente no estaba activado
+      if (!alarmTriggered) {
+        digitalWrite(buzzer, HIGH); // Activa el buzzer
+        alarmTriggered = true;
       }
+    } else if (mode == ALARM && !alarmTriggered) {
+      // En Modo Alarma, inicia la alarma
+      alarmTriggered = true;
+      digitalWrite(buzzer, HIGH); // Activa el buzzer
+      lastTriggerMillis = millis(); // Actualiza el momento del último disparo para el modo Alarma
     }
-  } 
-  if (mode == CHIME && alarmTriggered && (currentMillis - lastTriggerMillis >= 2000)) {
-    digitalWrite(buzzer, LOW); // Apaga el buzzer
-    alarmTriggered = false; // Restablece para permitir nuevas detecciones
+  } else {
+    // No detecta movimiento
+    if (mode == CHIME && alarmTriggered) {
+      digitalWrite(buzzer, LOW); // Apaga el buzzer inmediatamente en modo Chime
+      alarmTriggered = false; // Restablece para permitir nuevas detecciones
+    }
   }
-
+  
+  // Para el Modo Alarma, maneja el parpadeo del LED y el buzzer continuo
   if (mode == ALARM && alarmTriggered) {
-    // Si la alarma está activada, se podría agregar lógica específica aquí
-    // Por ejemplo, mantener el buzzer activo o manejar el LED
+    unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
       digitalWrite(ledPin, !digitalRead(ledPin)); // Parpadeo del LED
     }
-  }
-  if (!systemActive || !alarmTriggered) {
-    digitalWrite(buzzer, LOW);
+    // No apaga el buzzer en modo Alarma aquí, porque queremos mantenerlo sonando hasta que se desactive la alarma
   }
 }
 
