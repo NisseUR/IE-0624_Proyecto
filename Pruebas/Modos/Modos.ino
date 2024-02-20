@@ -20,6 +20,7 @@ bool alarmTriggered = false;
 String userPassword = ""; // Nueva variable para almacenar la contraseña del usuario
 String tempPassword = ""; // Almacena temporalmente la contraseña mientras se ingresa
 unsigned long previousMillis = 0;
+unsigned long lastTriggerMillis = 0;
 const long interval = 500;
 
 enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
@@ -143,38 +144,37 @@ void changePassword() {
     }
 }
 
+//cambiada
 void handleSensorAndAlerts() {
   int pirState = digitalRead(pirPin);
-  static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
-  
-  if (pirState == HIGH) {
-    Serial.println("Movimiento detectado en la zona.");
-    if (mode == CHIME && !alarmTriggered) {
-      // En Modo Chime, activa el buzzer por 2 segundos al detectar movimiento
+  unsigned long currentMillis = millis();
+
+  // Detección de movimiento y lógica para el modo Chime
+  if (pirState == HIGH && systemActive) {
+    if (!alarmTriggered) { 
       alarmTriggered = true;
-      digitalWrite(buzzer, HIGH);
-      lastTriggerMillis = millis();
-    } else if (mode == ALARM && !alarmTriggered) {
-      // En Modo Alarma, inicia la alarma
-      alarmTriggered = true;
-      lastTriggerMillis = millis();
+      lastTriggerMillis = currentMillis; // Registra el momento de la detección
+
+      if (mode == CHIME) {
+        digitalWrite(buzzer, HIGH); 
+      }
     }
-  }
-  
-  // Para el Modo Chime, apaga el buzzer después de 2 segundos
-  if (mode == CHIME && alarmTriggered && millis() - lastTriggerMillis >= 2000) {
-    digitalWrite(buzzer, LOW);
+  } 
+  if (mode == CHIME && alarmTriggered && (currentMillis - lastTriggerMillis >= 2000)) {
+    digitalWrite(buzzer, LOW); // Apaga el buzzer
     alarmTriggered = false; // Restablece para permitir nuevas detecciones
   }
 
-  // Para el Modo Alarma, maneja el parpadeo del LED y el buzzer continuo
   if (mode == ALARM && alarmTriggered) {
-    unsigned long currentMillis = millis();
+    // Si la alarma está activada, se podría agregar lógica específica aquí
+    // Por ejemplo, mantener el buzzer activo o manejar el LED
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
       digitalWrite(ledPin, !digitalRead(ledPin)); // Parpadeo del LED
     }
-    digitalWrite(buzzer, HIGH); // Mantiene el buzzer sonando
+  }
+  if (!systemActive || !alarmTriggered) {
+    digitalWrite(buzzer, LOW);
   }
 }
 
