@@ -8,19 +8,18 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {39, 8, 7, 6}; // Pines de las filas del teclado a Arduino
-byte colPins[COLS] = {5, 4, 3, 32}; // Pines de las columnas del teclado a Arduino
+byte rowPins[ROWS] = {9, 8, 7, 6}; // Pines de las filas del teclado a Arduino
+byte colPins[COLS] = {5, 4, 3, 2}; // Pines de las columnas del teclado a Arduino
 Keypad customKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 int ledPin = 13;
 int pirPin = 10;
-int buzzer = 11;
+int buzzer = 12;
 bool systemActive = false;
 bool alarmTriggered = false;
 String userPassword = ""; // Nueva variable para almacenar la contraseña del usuario
 String tempPassword = ""; // Almacena temporalmente la contraseña mientras se ingresa
 unsigned long previousMillis = 0;
-unsigned long lastTriggerMillis = 0;
 const long interval = 500;
 
 enum OperationMode { NONE, CHIME, ALARM } mode = NONE;
@@ -136,42 +135,39 @@ void changePassword() {
         if (enterPasswordForChange()) {
             Serial.println("Ingrese nueva contraseña:");
             setPassword(); // Establece la nueva contraseña
+            Serial.println("Contraseña cambiada exitosamente.");
             break; // Sale del bucle si la contraseña se cambia correctamente
         } else {
             Serial.println("Contraseña incorrecta. Intente de nuevo:");
-            // No es necesario limpiar tempPassword aquí ya que enterPasswordForChange() se encarga
         }
     }
 }
 
-//cambiada
+
 void handleSensorAndAlerts() {
   int pirState = digitalRead(pirPin);
   static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
   
-  // Detecta movimiento
   if (pirState == HIGH) {
     Serial.println("Movimiento detectado en la zona.");
-    if (mode == CHIME) {
-      // En Modo Chime, activa el buzzer solo si previamente no estaba activado
-      if (!alarmTriggered) {
-        digitalWrite(buzzer, HIGH); // Activa el buzzer
-        alarmTriggered = true;
-      }
+    if (mode == CHIME && !alarmTriggered) {
+      // En Modo Chime, activa el buzzer por 2 segundos al detectar movimiento
+      alarmTriggered = true;
+      digitalWrite(buzzer, HIGH);
+      lastTriggerMillis = millis();
     } else if (mode == ALARM && !alarmTriggered) {
       // En Modo Alarma, inicia la alarma
       alarmTriggered = true;
-      digitalWrite(buzzer, HIGH); // Activa el buzzer
-      lastTriggerMillis = millis(); // Actualiza el momento del último disparo para el modo Alarma
-    }
-  } else {
-    // No detecta movimiento
-    if (mode == CHIME && alarmTriggered) {
-      digitalWrite(buzzer, LOW); // Apaga el buzzer inmediatamente en modo Chime
-      alarmTriggered = false; // Restablece para permitir nuevas detecciones
+      lastTriggerMillis = millis();
     }
   }
   
+  // Para el Modo Chime, apaga el buzzer después de 2 segundos
+  if (mode == CHIME && alarmTriggered && millis() - lastTriggerMillis >= 2000) {
+    digitalWrite(buzzer, LOW);
+    alarmTriggered = false; // Restablece para permitir nuevas detecciones
+  }
+
   // Para el Modo Alarma, maneja el parpadeo del LED y el buzzer continuo
   if (mode == ALARM && alarmTriggered) {
     unsigned long currentMillis = millis();
@@ -179,7 +175,7 @@ void handleSensorAndAlerts() {
       previousMillis = currentMillis;
       digitalWrite(ledPin, !digitalRead(ledPin)); // Parpadeo del LED
     }
-    // No apaga el buzzer en modo Alarma aquí, porque queremos mantenerlo sonando hasta que se desactive la alarma
+    digitalWrite(buzzer, HIGH); // Mantiene el buzzer sonando
   }
 }
 
