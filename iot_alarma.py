@@ -10,7 +10,8 @@ mqtt_topic = "v1/devices/me/telemetry"
 mqtt_password = "yq7cgc21emlixma2q1p0"
 
 # Se configura el puerto serie
-serial_port = "/dev/ttyACM0"  
+#serial_port = "/dev/ttyACM0"
+serial_port = "COM6"  # Windows
 baudrate = 115200
 
 # Crear instancia del cliente MQTT
