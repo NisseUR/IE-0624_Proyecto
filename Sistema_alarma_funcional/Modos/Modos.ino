@@ -149,7 +149,7 @@ void handleSensorAndAlerts() {
   static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
   
   if (pirState == HIGH) {
-    Serial.println("Movimiento detectado en la zona.");
+    Serial.println("Movimiento");
     if (mode == CHIME && !alarmTriggered) {
       // En Modo Chime, activa el buzzer por 2 segundos al detectar movimiento
       alarmTriggered = true;
