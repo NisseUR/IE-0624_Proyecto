@@ -25,6 +25,13 @@ baudrate = 9600  # Velocidad de baudios
 # Crear instancia del cliente MQTT
 mqtt_client = mqtt.Client("STM32_Serial_MQTT")
 
+def on_log(client, userdata, level, buf):
+   print(buf) 
+
+def on_publish(client, userdata, mid):
+    print("In on_pub callback mid= "  ,mid)   
+
+
 # Definir los manejadores de eventos MQTT
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -34,6 +41,8 @@ def on_connect(client, userdata, flags, rc):
 
 def on_disconnect(client, userdata, rc):
     print(f"Disconnected from MQTT broker with result code {rc}")
+
+
 
 # Funciones de callback
 mqtt_client.on_connect = on_connect
@@ -48,16 +57,11 @@ mqtt_client.connect(broker_address, mqtt_port, 60)
 mqtt_client.subscribe(mqtt_topic)
 mqtt_client.loop_start()  # Iniciar el loop en un hilo separado
 
-data = dict()
+mqtt_client.on_log=on_log
 
-x=0
-y=1
-z=2
-r=3
 
 # Iniciar la comunicación serial
 comunicacion_serial = serial.Serial(serial_port, baudrate, timeout=1)
-data = dict()
 
 while True:
     try:
@@ -67,31 +71,25 @@ while True:
             #mensaje = comunicacion_serial.readline().decode().split()
             print(mensaje)  # Imprime el mensaje para depuración
 
-            if mensaje == "Movimiento":
-                data = {"Alarma1":"ON", "Alarma":"ON"}
+            if mensaje.strip() == "Movimiento":
+                data = {"Alarma1": "ON", "Alarma": "ON"}
             else:
-                data = {"Alarma1":"OFF", "Alarma":"OFF"}
-
-            #data_out = json.dumps(data)  # Create JSON object
-
-            # Construir payload MQTT
-                payload = json.dumps({"Eje X": x,
-                                      "Eje Y": y,
-                                      "Eje Z": z,
-                                      "Nivel Bateria": r})
+                data = {"Alarma1": "OFF", "Alarma": "OFF"}
+            
+            # Construir payload MQTT usando los datos recibidos
+            payload = json.dumps(data)
 
             try:
-                # Construir payload MQTT
+                # Publicar el mensaje MQTT
                 mqtt_client.publish(mqtt_topic, payload, 0)
-                mqtt_client.loop()
-               # mqtt_client.publish(mqtt_topic, data_out, qos=0)  # publish
+                #mqtt_client.loop()
             except ValueError:
                 print("Error al procesar los datos recibidos.")
 
     except KeyboardInterrupt:
         print("\nScript interrumpido por el usuario.")
         break
-
+    
 # Limpiar antes de salir
 comunicacion_serial.close()
 mqtt_client.loop_stop()
