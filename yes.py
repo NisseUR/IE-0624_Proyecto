@@ -58,6 +58,7 @@ r=3
 # Iniciar la comunicación serial
 comunicacion_serial = serial.Serial(serial_port, baudrate, timeout=1)
 data = dict()
+
 while True:
     try:
         if comunicacion_serial.inWaiting():
@@ -81,7 +82,8 @@ while True:
 
             try:
                 # Construir payload MQTT
-                mqtt_client.publish(mqtt_topic, payload)
+                mqtt_client.publish(mqtt_topic, payload, 0)
+                mqtt_client.loop()
                # mqtt_client.publish(mqtt_topic, data_out, qos=0)  # publish
             except ValueError:
                 print("Error al procesar los datos recibidos.")
