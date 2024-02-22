@@ -98,11 +98,21 @@ void selectMode() {
       case 'B':
         mode = (key == 'A') ? CHIME : ALARM;
         Serial.println("\nModo seleccionado: " + String(mode == CHIME ? "Chime" : "Alarma"));
+        if (key == 'A'){
+          Serial.println("\nchime");
+        }
+        if (key == 'B'){
+          Serial.println("\nalarma");
+        }
         modeSelected = true;
         Serial.println("Ingrese la contraseña para activar el sistema.");
         break;
       case 'C':
+      if (key == 'C'){
+          Serial.println("\npassword");
+        }
         changePassword();
+        Serial.println("\ncontrasena");
         break;
     }
   }
@@ -131,6 +141,7 @@ bool enterPasswordForChange() {
 
 void changePassword() {
     Serial.println("Cambiando contraseña. Ingrese contraseña actual:");
+    //Serial.println("\npassword");
     while (true) { // Bucle infinito para intentos ilimitados
         if (enterPasswordForChange()) {
             Serial.println("Ingrese nueva contraseña:");
@@ -149,7 +160,7 @@ void handleSensorAndAlerts() {
   static unsigned long lastTriggerMillis = 0; // Guarda el momento del último disparo de alarma
   
   if (pirState == HIGH) {
-    Serial.println("Movimiento");
+    Serial.println("movimiento");
     if (mode == CHIME && !alarmTriggered) {
       // En Modo Chime, activa el buzzer por 2 segundos al detectar movimiento
       alarmTriggered = true;
@@ -165,6 +176,7 @@ void handleSensorAndAlerts() {
   // Para el Modo Chime, apaga el buzzer después de 2 segundos
   if (mode == CHIME && alarmTriggered && millis() - lastTriggerMillis >= 2000) {
     digitalWrite(buzzer, LOW);
+    Serial.println("chimetermina");
     alarmTriggered = false; // Restablece para permitir nuevas detecciones
   }
 
